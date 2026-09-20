@@ -300,7 +300,7 @@ test.describe('selfhosted management', () => {
 		await expect(dialog).toContainText(renamed);
 		await dialog.getByRole('button', { name: 'Rename' }).click();
 		await expect(page).toHaveURL(`/${renamed}`);
-		await expect(page.getByRole('heading', { name: 'Manage' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Manage', exact: true })).toBeVisible();
 		expect((await hub.request.get(`/api/models/${id}`)).status()).toBe(404);
 		expect(await hub.text('model', renamed, 'main', 'README.md')).toBe('# Manage\n');
 
