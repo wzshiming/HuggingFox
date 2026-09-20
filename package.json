@@ -17,8 +17,7 @@
 		"test:e2e": "playwright test --project mocked",
 		"test:live": "HUB_UPSTREAM=https://huggingface.co playwright test --project live",
 		"test:selfhosted": "SELFHOSTED=1 playwright test --project selfhosted",
-		"gen:api": "node tools/gen-api.ts",
-		"capture:ref": "node tools/reference/capture.ts"
+		"gen:api": "node tools/gen-api.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.1.1",
