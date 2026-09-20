@@ -1,0 +1,48 @@
+server_tokens off;
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name _;
+    root /usr/share/nginx/html;
+    absolute_redirect off;
+
+    gzip on;
+    gzip_vary on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # Hub API, resolve downloads, git smart HTTP / LFS and XET CAS traffic; kept in sync with proxy-routes.ts by tests.
+    location ~ "^(?:/api(?:[/?]|$)|/(?:(?:datasets|spaces)/)?[^/?]+(?:/[^/?]+)?/resolve/|/(?:(?:datasets|spaces)/)?[^/?]+(?:/[^/?]+)?\.git(?:[/?]|$)|/(?:(?:datasets|spaces)/)?[^/?]+(?:/[^/?]+)?/(?:info/(?:refs|lfs)|git-upload-pack|git-receive-pack)(?:[/?]|$)|/(?:objects|v1|v2|shards|reconstructions|xet-bridge|internal)(?:[/?]|$)|/avatars/[^/?]+\.svg(?:\?|$))" {
+        client_max_body_size 0;
+        proxy_pass ${HUB_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host ${HUB_UPSTREAM_HOST};
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_read_timeout 300s;
+        proxy_ssl_server_name on;
+        proxy_ssl_name ${HUB_UPSTREAM_SNI};
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+    }
+
+    location ^~ /_app/immutable/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri /index.html;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache" always;
+        add_header Content-Security-Policy "frame-ancestors 'self'" always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+    }
+}

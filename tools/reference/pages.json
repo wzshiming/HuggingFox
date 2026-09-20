@@ -1,0 +1,58 @@
+{
+	"widths": [1440, 768, 390],
+	"pages": [
+		{ "name": "home", "hf": "/", "local": "/" },
+		{ "name": "login", "hf": "/login", "local": "/login" },
+		{ "name": "models", "hf": "/models", "local": "/models" },
+		{ "name": "datasets", "hf": "/datasets", "local": "/datasets" },
+		{ "name": "spaces", "hf": "/spaces", "local": "/spaces" },
+		{
+			"name": "model",
+			"hf": "/openai-community/gpt2",
+			"local": "/openai-community/gpt2"
+		},
+		{
+			"name": "model-tree",
+			"hf": "/openai-community/gpt2/tree/main",
+			"local": "/openai-community/gpt2/tree/main"
+		},
+		{
+			"name": "model-blob",
+			"hf": "/openai-community/gpt2/blob/main/config.json",
+			"local": "/openai-community/gpt2/blob/main/config.json"
+		},
+		{
+			"name": "model-blob-readme",
+			"hf": "/openai-community/gpt2/blob/main/README.md",
+			"local": "/openai-community/gpt2/blob/main/README.md"
+		},
+		{
+			"name": "model-blob-safetensors",
+			"hf": "/openai-community/gpt2/blob/main/model.safetensors",
+			"local": "/openai-community/gpt2/blob/main/model.safetensors",
+			"ready": "[data-testid=tensor-view] table"
+		},
+		{
+			"name": "model-commits",
+			"hf": "/openai-community/gpt2/commits/main",
+			"local": "/openai-community/gpt2/commits/main"
+		},
+		{
+			"name": "model-commit",
+			"hf": "/openai-community/gpt2/commit/607a30d783dfa663caf39e06633721c8d4cfcd7e",
+			"local": "/openai-community/gpt2/commit/607a30d783dfa663caf39e06633721c8d4cfcd7e"
+		},
+		{
+			"name": "dataset",
+			"hf": "/datasets/stanfordnlp/imdb",
+			"local": "/datasets/stanfordnlp/imdb"
+		},
+		{
+			"name": "dataset-tree",
+			"hf": "/datasets/stanfordnlp/imdb/tree/main/plain_text",
+			"local": "/datasets/stanfordnlp/imdb/tree/main/plain_text"
+		},
+		{ "name": "space", "hf": "/spaces/gradio/hello_world", "local": "/spaces/gradio/hello_world" },
+		{ "name": "user", "hf": "/julien-c", "local": "/julien-c" }
+	]
+}

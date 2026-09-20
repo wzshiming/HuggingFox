@@ -1,0 +1,130 @@
+@import 'tailwindcss';
+@import '@fontsource/source-sans-3/latin-400.css';
+@import '@fontsource/source-sans-3/latin-600.css';
+@import '@fontsource/source-sans-3/latin-700.css';
+@import '@fontsource/source-sans-3/latin-ext-400.css';
+@import '@fontsource/source-sans-3/latin-ext-600.css';
+@import '@fontsource/source-sans-3/latin-ext-700.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+	--font-sans: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	--text-smd: 0.9375rem;
+	--text-smd--line-height: 1.375rem;
+	--color-gray-925: oklch(0.16 0.02 260);
+	--color-gray-950: oklch(0.13 0.02 260);
+}
+
+@utility container {
+	width: 100%;
+	margin-inline: auto;
+	padding-inline: 1rem;
+	max-width: 96rem;
+}
+
+@layer base {
+	body {
+		@apply bg-white text-black antialiased dark:bg-gray-950 dark:text-gray-200;
+	}
+}
+
+@utility form-input-alt {
+	@apply rounded-lg border border-gray-200 bg-gray-50 text-sm text-black shadow-inner outline-none dark:border-gray-800 dark:bg-gray-925 dark:text-gray-200;
+	&:focus {
+		@apply border-gray-300 bg-white ring-2 ring-gray-200 dark:border-gray-700 dark:bg-gray-950 dark:ring-gray-800;
+	}
+}
+
+@utility overview-card {
+	@apply rounded-lg border border-gray-100 bg-white shadow-xs transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-925;
+}
+
+@plugin '@tailwindcss/typography';
+
+/* Repository cards: sanitized README html rendered by the markdown component. */
+.markdown {
+	@apply wrap-break-word;
+	img {
+		@apply inline-block;
+	}
+	table {
+		@apply block max-w-full overflow-x-auto;
+	}
+	pre {
+		@apply border border-gray-100 bg-gray-50 text-gray-800 dark:border-gray-800 dark:bg-gray-925 dark:text-gray-200;
+	}
+	pre code.hljs {
+		@apply bg-transparent p-0;
+	}
+	code::before,
+	code::after {
+		content: none;
+	}
+	li:has(> input[type='checkbox']) {
+		@apply list-none;
+	}
+	li > input[type='checkbox'] {
+		@apply mr-1.5 align-middle;
+	}
+	.katex-display {
+		@apply overflow-x-auto py-1;
+	}
+}
+
+/* highlight.js tokens, shared by cards and the file viewer. */
+.markdown,
+.code-view {
+	.hljs-comment,
+	.hljs-quote {
+		@apply text-gray-500;
+	}
+	.hljs-keyword,
+	.hljs-selector-tag,
+	.hljs-doctag,
+	.hljs-template-tag,
+	.hljs-type,
+	.hljs-variable.language_ {
+		@apply text-red-700 dark:text-red-400;
+	}
+	.hljs-title,
+	.hljs-title.class_,
+	.hljs-title.function_ {
+		@apply text-purple-700 dark:text-purple-300;
+	}
+	.hljs-attr,
+	.hljs-attribute,
+	.hljs-literal,
+	.hljs-meta,
+	.hljs-number,
+	.hljs-operator,
+	.hljs-variable,
+	.hljs-selector-attr,
+	.hljs-selector-class,
+	.hljs-selector-id {
+		@apply text-blue-700 dark:text-blue-300;
+	}
+	.hljs-string,
+	.hljs-regexp,
+	.hljs-meta .hljs-string {
+		@apply text-sky-900 dark:text-sky-200;
+	}
+	.hljs-built_in,
+	.hljs-symbol {
+		@apply text-orange-700 dark:text-orange-300;
+	}
+	.hljs-name,
+	.hljs-section,
+	.hljs-bullet {
+		@apply text-green-700 dark:text-green-400;
+	}
+	.hljs-emphasis {
+		@apply italic;
+	}
+	.hljs-strong {
+		@apply font-semibold;
+	}
+}
