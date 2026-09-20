@@ -1,4 +1,4 @@
-// Package hubserver assembles the pinned hfd hub (git, LFS, hub API, xet CAS, SSH) with the web UI as the HTTP chain tail.
+// Package hubserver assembles the pinned hfd hub with the web UI as the HTTP chain tail.
 package hubserver
 
 import (
@@ -31,7 +31,6 @@ import (
 	"github.com/wzshiming/HuggingFox/internal/webui"
 )
 
-// Server is the assembled hub: one HTTP handler chain and an optional SSH git server sharing storage, policy and hooks.
 type Server struct {
 	cfg           Config
 	handler       http.Handler
@@ -40,7 +39,6 @@ type Server struct {
 	shutdownGrace time.Duration
 }
 
-// New wires local storage under cfg.DataDir and the hfd chain with webFS as its tail; nothing listens until Serve.
 func New(ctx context.Context, cfg Config, webFS fs.FS) (*Server, error) {
 	hostURL, err := cfg.hostURL()
 	if err != nil {
@@ -107,12 +105,11 @@ func New(ctx context.Context, cfg Config, webFS fs.FS) (*Server, error) {
 	return s, nil
 }
 
-// Handler returns the HTTP chain: hfd routes first, web UI last.
 func (s *Server) Handler() http.Handler {
 	return s.handler
 }
 
-// hubAPI is hfd's authentication layer with the hub API extensions behind it, so listing, tags, quick search, commits, paths-info and tree listings answer ahead of hfd's backends under the same access log and validators.
+// Puts the hub extensions behind hfd's authentication layer, under its validators and access log.
 func hubAPI(opts server.Options) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return authenticate.NewHandler(
@@ -124,7 +121,7 @@ func hubAPI(opts server.Options) func(http.Handler) http.Handler {
 	}
 }
 
-// Serve binds both listeners before serving; on ctx cancel or the first listener failure it drains HTTP for shutdownGrace, closes every remaining connection and returns that failure (nil on cancel).
+// Both listeners bind before either serves; the first failure stops both, cancel returns nil.
 func (s *Server) Serve(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -181,7 +178,7 @@ func (s *Server) Serve(ctx context.Context) error {
 	return failure
 }
 
-// trackedListener closes accepted connections with the listener, because the hfd SSH server only closes them once a handshake finishes.
+// Closes accepted conns with the listener: hfd's SSH server only closes them after a handshake.
 type trackedListener struct {
 	net.Listener
 	mu     sync.Mutex
@@ -257,7 +254,7 @@ func newXETClient(cfg Config, chunksDir string) (*xetclient.Client, error) {
 	return xetclient.NewClient(opts...)
 }
 
-// newXETMirror returns nil without a pull mirror; the hfd mirror treats a nil engine as "no upstream".
+// A nil engine means "no upstream" to the hfd mirror.
 func newXETMirror(cfg Config, xs xetstorage.Storage, xetC *xetclient.Client) (*xetmirror.Mirror, error) {
 	if cfg.PullMirrorURL == "" {
 		return nil, nil
@@ -304,7 +301,7 @@ func remoteFor(base string) func(context.Context, string) (string, bool, error) 
 	}
 }
 
-// hostKey loads cfg.SSHHostKeyFile, or loads/generates DataDir/ssh_host_rsa_key so restarts keep the same host identity.
+// The generated key is persisted so restarts keep the same host identity.
 func hostKey(ctx context.Context, cfg Config) (pkgssh.Signer, error) {
 	path := cfg.SSHHostKeyFile
 	if path == "" {

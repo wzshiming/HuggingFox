@@ -13,10 +13,10 @@ import (
 	"github.com/matrixhub-ai/hfd/pkg/repository"
 )
 
-// commitHeaderLimit bounds the first NDJSON line inspected for the header; the SDK's header is a few hundred bytes.
+// Bounds the peeked header line; the SDK's header is a few hundred bytes.
 const commitHeaderLimit = 64 << 10
 
-// handleCommit answers the hub's 412 for a header whose parentCommit is no longer the branch tip, which hfd reports as a 500 only after reading the whole body; every other commit reaches hfd untouched, whose atomic tip check still covers a tip moving after this look.
+// Early 412 for a stale parentCommit hfd would 500 late; hfd's atomic tip check stays authoritative.
 func (h *Handler) handleCommit(w http.ResponseWriter, r *http.Request) {
 	t, err := target(r)
 	if err != nil {
@@ -31,7 +31,7 @@ func (h *Handler) handleCommit(w http.ResponseWriter, r *http.Request) {
 		h.opts.Next.ServeHTTP(w, r)
 		return
 	}
-	// Opened without the pre-open hook: a repository hfd cannot open, or must pull first, is hfd's to answer.
+	// No pre-open hook: a repository hfd cannot open, or must pull first, is hfd's to answer.
 	repoPath := repository.ResolvePath(t.name)
 	if repoPath == "" {
 		h.opts.Next.ServeHTTP(w, r)
@@ -49,14 +49,14 @@ func (h *Handler) handleCommit(w http.ResponseWriter, r *http.Request) {
 	h.opts.Next.ServeHTTP(w, r)
 }
 
-// peekParentCommit returns the header's parentCommit when the first line is a complete header, leaving the body byte-for-byte readable for the next handler.
+// Leaves the body byte-for-byte readable; EOF can still end a full header, ErrBufferFull cannot.
 func peekParentCommit(r *http.Request) string {
 	br := bufio.NewReaderSize(r.Body, commitHeaderLimit)
 	line, err := br.ReadSlice('\n')
 	head := bytes.Clone(line)
 	var rest io.Reader = br
 	if err != nil && err != io.EOF && err != bufio.ErrBufferFull {
-		// bufio has consumed the body's read error; replaying it keeps hfd from committing only the bytes that arrived before it.
+		// bufio swallowed the body's read error; replaying it keeps hfd from committing a truncated body.
 		rest = errReader{err}
 	}
 	r.Body = struct {

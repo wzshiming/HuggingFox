@@ -158,7 +158,7 @@ describe('repo endpoints', () => {
 		expect(missing.items[0].id).toBe('abc');
 	});
 
-	it('requests info, refs and a two-dot compare', async () => {
+	it('requests info, refs and a bounded two-dot patch', async () => {
 		const { calls, hub } = fakeHub((call) =>
 			call.url.pathname.includes('/compare/')
 				? new Response('diff --git a/x b/x', { headers: { 'content-type': 'text/plain' } })
@@ -171,11 +171,13 @@ describe('repo endpoints', () => {
 		expect(calls[1].url.searchParams.getAll('expand[]')).toEqual(['runtime']);
 		await hub.refs('model', 'u/r', { includePrs: true });
 		expect(calls[2].url.pathname + calls[2].url.search).toBe('/api/models/u/r/refs?include_prs=1');
-		expect(await hub.compare('model', 'u/r', 'refs/pr/1', 'main', { raw: true })).toBe(
-			'diff --git a/x b/x'
-		);
+		expect(await hub.patch('model', 'u/r', 'refs/pr/1', 'main')).toEqual({
+			text: 'diff --git a/x b/x',
+			size: null,
+			truncated: false
+		});
 		expect(calls[3].url.pathname + calls[3].url.search).toBe(
-			'/api/models/u/r/compare/refs%2Fpr%2F1..main?raw=1'
+			'/api/models/u/r/compare/refs%2Fpr%2F1..main'
 		);
 	});
 });

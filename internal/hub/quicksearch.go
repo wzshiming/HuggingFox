@@ -17,7 +17,7 @@ const (
 	maxQuickLimit     = 100
 )
 
-// handleQuicksearch serves GET /api/quicksearch: case-insensitive id matches per repository type with full match counts; there are no organisations or users to search.
+// orgs and users are always empty: this hub has no accounts to search.
 func (h *Handler) handleQuicksearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	needle := strings.ToLower(q.Get("q"))

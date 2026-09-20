@@ -12,7 +12,7 @@ import (
 	"github.com/matrixhub-ai/hfd/pkg/repository"
 )
 
-// handleTree serves GET /api/{type}/{ns}/{repo}/tree/{rev}[/{path}]: the children of path in tree order, or every descendant in pre-order with recursive=true; the revision is one encoded segment and the path is decoded once.
+// Lists the children of path, or every descendant in pre-order with recursive=true.
 func (h *Handler) handleTree(w http.ResponseWriter, r *http.Request) {
 	t, err := target(r)
 	if err != nil {
@@ -71,7 +71,6 @@ func (h *Handler) handleTree(w http.ResponseWriter, r *http.Request) {
 	respond(w, out, http.StatusOK)
 }
 
-// queryFlag parses one of the HF boolean query parameters (true/1/false/0 and case variants); absent or empty means false.
 func queryFlag(q url.Values, name string) (bool, error) {
 	v := q.Get(name)
 	if v == "" {
@@ -84,7 +83,6 @@ func queryFlag(q url.Values, name string) (bool, error) {
 	return b, nil
 }
 
-// listTree appends the described entries of dir to out, descending into each directory right after it when recursive.
 func listTree(ctx context.Context, repo *repository.Repository, hash, dir string, recursive, expand bool, listed map[string][]*repository.TreeEntry, out []pathInfo) ([]pathInfo, error) {
 	entries, err := treeAt(repo, hash, dir, listed)
 	if err != nil {

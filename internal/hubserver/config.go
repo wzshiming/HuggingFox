@@ -6,20 +6,20 @@ import (
 	"time"
 )
 
-// Config mirrors the upstream hfd command flags for local storage; the zero value disables SSH and every mirror.
+// Config mirrors the upstream hfd command flags for local storage.
 type Config struct {
-	Addr    string // HTTP listen address
-	HostURL string // external base URL; inferred from Addr when empty
+	Addr    string
+	HostURL string
 
-	SSHAddr        string // SSH listen address; empty disables the SSH server
-	SSHHostKeyFile string // PEM host key; empty stores a generated key under DataDir
+	SSHAddr        string
+	SSHHostKeyFile string
 
 	DataDir string
 
 	Username string
-	Password string // enables HTTP basic auth and SSH password auth
-	Token    string // enables the static bearer token
-	SignKey  string // signs per-request tokens and xet CAS grants; empty disables signed bearer tokens and uses a per-process CAS key
+	Password string
+	Token    string
+	SignKey  string // empty: no signed bearer tokens, per-process xet CAS key
 
 	ProxyToken              string
 	PullMirrorURL           string
@@ -29,7 +29,7 @@ type Config struct {
 	ProxyCacheSize          int64
 }
 
-// DefaultConfig returns the upstream hfd defaults except the sign key, whose well-known upstream value would let anyone mint accepted bearer tokens.
+// Upstream hfd defaults, minus the sign key: its well-known value would let anyone mint tokens.
 func DefaultConfig() Config {
 	return Config{
 		Addr:                    ":8080",

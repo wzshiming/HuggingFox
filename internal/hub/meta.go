@@ -19,16 +19,13 @@ import (
 	"github.com/matrixhub-ai/hfd/pkg/repository"
 )
 
-// typedRoots are the model-namespace directories reserved for the other repository types.
+// Root directories holding the other repository types, never model namespaces.
 var typedRoots = map[string]bool{"datasets": true, "spaces": true}
 
-// repoRef is one enumerated repository: its hub id and its bare path on the repositories filesystem.
 type repoRef struct {
 	id, path string
 }
 
-// listRepos enumerates the repositories of repoType in lexical id order, scoped to author when set.
-// A missing root or author directory lists nothing; any other filesystem error is returned.
 func listRepos(ctx context.Context, fsys billy.Filesystem, repoType, author string) ([]repoRef, error) {
 	base := "/"
 	if repoType != "models" {
@@ -68,32 +65,28 @@ func listRepos(ctx context.Context, fsys billy.Filesystem, repoType, author stri
 	return refs, nil
 }
 
-// repoDates are the tip-derived dates of a repository; zero for an unborn default branch.
 type repoDates struct {
 	sha                     string
 	lastModified, createdAt time.Time
 }
 
-// hubTime formats t the way the Hub reports dates.
 func hubTime(t time.Time) string {
 	return t.UTC().Format(repository.TimeFormat)
 }
 
-// Files larger than these are not parsed for metadata.
 const (
 	maxReadmeBytes = 2 << 20
 	maxConfigBytes = 1 << 20
 )
 
-// repoMeta is what one repository's README.md front matter and config.json contribute to listings and facets.
 type repoMeta struct {
-	card                                       *hfmeta.Card   // nil without parseable front matter
-	cardData                                   json.Marshaler // raw front matter; nil without one
+	card                                       *hfmeta.Card
+	cardData                                   json.Marshaler
 	tags                                       []string
 	pipelineTag, libraryName, sdk, description string
 }
 
-// readMeta collects metadata at rev; missing, oversized or malformed files contribute nothing rather than failing.
+// Missing, oversized or malformed files contribute nothing rather than failing the listing.
 func readMeta(repo *repository.Repository, rev, repoType string) repoMeta {
 	var m repoMeta
 	seen := map[string]bool{}
@@ -127,7 +120,6 @@ func readMeta(repo *repository.Repository, rev, repoType string) repoMeta {
 	return m
 }
 
-// cardTags shapes the card's tags per repository type: models and spaces keep hfmeta's bare list, datasets prefix each facet with its field name.
 func cardTags(rm *hfmeta.Readme, repoType string) []string {
 	c := rm.Card
 	switch repoType {
@@ -163,7 +155,6 @@ func cardTags(rm *hfmeta.Readme, repoType string) []string {
 	return tags
 }
 
-// readBlob returns the file's bytes at rev when it exists and is at most limit bytes.
 func readBlob(repo *repository.Repository, rev, name string, limit int64) ([]byte, bool) {
 	blob, err := repo.Blob(rev, name)
 	if err != nil || blob.Size() > limit {
@@ -178,7 +169,7 @@ func readBlob(repo *repository.Repository, rev, name string, limit int64) ([]byt
 	return data, err == nil
 }
 
-// readmeBody splits off a leading "---" front matter block the way hfmeta does and reports whether one was present.
+// Front matter is detected the way hfmeta does, so hasCard agrees with ParseReadme.
 func readmeBody(data []byte) ([]byte, bool) {
 	if !bytes.HasPrefix(data, []byte("---\n")) && !bytes.HasPrefix(data, []byte("---\r\n")) {
 		return data, false
@@ -192,7 +183,6 @@ func readmeBody(data []byte) ([]byte, bool) {
 	return body, true
 }
 
-// firstParagraph returns the first blank-line separated block that is not only headings, trimmed.
 func firstParagraph(body []byte) string {
 	for _, para := range strings.Split(strings.ReplaceAll(string(body), "\r\n", "\n"), "\n\n") {
 		para = strings.TrimSpace(para)
@@ -206,7 +196,6 @@ func firstParagraph(body []byte) string {
 	return ""
 }
 
-// siblings lists the files reachable at rev; an unborn or unreadable revision has none.
 func siblings(repo *repository.Repository, rev string) []map[string]string {
 	out := []map[string]string{}
 	if repo == nil {
@@ -229,7 +218,7 @@ type tipEntry struct {
 	createdAt time.Time
 }
 
-// tipCache remembers the earliest reachable author date per repository path for the tip it was computed at, so listings walk a history only when the tip moved.
+// Git has no creation time: createdAt is the earliest reachable author date, cached per tip.
 type tipCache struct {
 	mu      sync.Mutex
 	entries map[string]tipEntry
@@ -237,7 +226,6 @@ type tipCache struct {
 
 const tipCacheSize = 256
 
-// dates reads the tip of rev and, when wantCreated is set, the earliest reachable author date, from the cache when the tip is unchanged.
 func (c *tipCache) dates(repo *repository.Repository, key, rev string, wantCreated bool) repoDates {
 	tips, err := repo.Commits(rev, &repository.CommitsOptions{Limit: 1})
 	if err != nil || len(tips) == 0 {

@@ -1,4 +1,4 @@
-// Package hub answers the Hub API routes the pinned hfd lacks or answers too thinly (repository listing, tag facets, quick search, commit pages, paths-info, tree listings, the commit parent precondition) ahead of its backends.
+// Package hub serves the Hub API routes the pinned hfd lacks or answers too thinly.
 package hub
 
 import (
@@ -17,7 +17,6 @@ import (
 	"github.com/matrixhub-ai/hfd/pkg/storage"
 )
 
-// Options wires the handler; Storage is required, Next answers every request not handled here (nil answers 404).
 type Options struct {
 	Storage    *storage.Storage
 	Permission permission.PermissionHookFunc
@@ -25,14 +24,13 @@ type Options struct {
 	Next       http.Handler
 }
 
-// Handler serves the routes registered in New and hands everything else, method mismatches included, to Options.Next.
 type Handler struct {
 	opts   Options
 	router *mux.Router
 	tips   tipCache
 }
 
-// New builds the handler; revisions arrive percent-encoded so a slash inside a branch name stays one path segment.
+// Routes match encoded paths so a percent-encoded slash inside a revision stays one segment.
 func New(opts Options) *Handler {
 	if opts.Storage == nil {
 		panic("hub: Options.Storage is required")
@@ -54,12 +52,11 @@ func New(opts Options) *Handler {
 	return h
 }
 
-// ServeHTTP implements http.Handler.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.router.ServeHTTP(w, r)
 }
 
-// respond encodes v before writing so an encoding failure becomes a 500 rather than a truncated 200; errors and strings become {"error": ...}.
+// Encoding before WriteHeader turns a marshal failure into a 500 instead of a truncated 200.
 func respond(w http.ResponseWriter, v any, status int) {
 	switch t := v.(type) {
 	case error:
@@ -86,12 +83,10 @@ func (h *Handler) allow(w http.ResponseWriter, r *http.Request, op permission.Op
 	}.Allow(w, r, op, name, c)
 }
 
-// repoTarget is the repository a route addresses: hub id and hfd storage name (datasets/ and spaces/ prefixed).
 type repoTarget struct {
 	repoType, id, name, rev string
 }
 
-// target decodes the route variables and refuses namespace or repo values that are not one plain path element.
 func target(r *http.Request) (repoTarget, error) {
 	vars := mux.Vars(r)
 	var parts [3]string
@@ -117,7 +112,7 @@ func validSegment(s string) bool {
 	return s != "" && s != "." && s != ".." && !strings.Contains(s, "/")
 }
 
-// openRepo runs the read permission check and the pre-open hook (which may pull a mirror) before opening; failures are written here.
+// The pre-open hook may pull a mirror, so it runs after the permission check and before Open.
 func (h *Handler) openRepo(w http.ResponseWriter, r *http.Request, t repoTarget) (*repository.Repository, bool) {
 	if !h.allow(w, r, permission.OperationReadRepo, t.name, permission.Context{Ref: t.rev}) {
 		return nil, false
@@ -149,7 +144,7 @@ func respondOpenError(w http.ResponseWriter, name string, err error) {
 	respond(w, fmt.Errorf("failed to open repository %q: %v", name, err), http.StatusInternalServerError)
 }
 
-// revisionError maps a ResolveRevision failure to its response: 404 when go-git cannot parse, find or walk the revision (main~999 runs out of parents as io.EOF), 500 for anything else.
+// 404 for unknown, invalid or exhausted revisions (main~999 runs out of parents as io.EOF).
 func revisionError(rev string, err error) (int, error) {
 	// go-git's invalid-revision error type is internal, so its message prefix is the only handle.
 	if errors.Is(err, repository.ErrRevisionNotFound) || errors.Is(err, io.EOF) || strings.HasPrefix(err.Error(), "Revision invalid") {
@@ -158,7 +153,6 @@ func revisionError(rev string, err error) (int, error) {
 	return http.StatusInternalServerError, fmt.Errorf("failed to resolve revision %q: %v", rev, err)
 }
 
-// origin rebuilds the external base URL for Link headers; a forwarded proto counts only when it is a real scheme.
 func origin(r *http.Request) string {
 	scheme := "http"
 	if r.TLS != nil {
@@ -170,7 +164,6 @@ func origin(r *http.Request) string {
 	return scheme + "://" + r.Host
 }
 
-// nextLink builds the rel="next" Link value for the same route with the query adjusted by set.
 func nextLink(r *http.Request, set func(q url.Values)) string {
 	q := r.URL.Query()
 	set(q)

@@ -11,7 +11,6 @@ import (
 //go:embed all:build
 var build embed.FS
 
-// WebFS returns the SvelteKit output (build/app); index.html is absent until the frontend is built.
 func WebFS() fs.FS {
 	sub, err := fs.Sub(build, "build/app")
 	if err != nil {

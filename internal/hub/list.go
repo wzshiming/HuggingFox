@@ -16,7 +16,7 @@ import (
 	"github.com/matrixhub-ai/hfd/pkg/repository"
 )
 
-// listFields holds per repository type the Hub's default projection, what full=true adds, and every expand[] option the Hub accepts; accepted options this hub cannot fill are omitted.
+// Per type: the Hub's default projection, what full=true adds and every expand[] option it accepts.
 var listFields = map[string]struct{ base, full, expand []string }{
 	"models": {
 		base:   []string{"modelId", "private", "downloads", "likes", "tags", "pipeline_tag", "library_name", "createdAt"},
@@ -35,10 +35,8 @@ var listFields = map[string]struct{ base, full, expand []string }{
 	},
 }
 
-// metaFields are the projection keys that need the README/config metadata.
 var metaFields = []string{"tags", "pipeline_tag", "library_name", "sdk", "description", "paperswithcode_id", "cardData", "datasets", "models"}
 
-// listQuery is the parsed GET /api/{type} query.
 type listQuery struct {
 	repoType, author, search string
 	filters, pipelines       []string
@@ -48,7 +46,7 @@ type listQuery struct {
 	limit, offset            int
 }
 
-// The Hub pages at most this many repositories; the default applies without a limit parameter.
+// Matches the Hub's page cap.
 const maxListLimit = 1000
 
 func parseListQuery(r *http.Request) (listQuery, error) {
@@ -140,7 +138,6 @@ func decodeCursor(s string) (int, error) {
 	return c.Offset, nil
 }
 
-// handleList serves GET /api/{models|datasets|spaces}.
 func (h *Handler) handleList(w http.ResponseWriter, r *http.Request) {
 	lq, err := parseListQuery(r)
 	if err != nil {
@@ -197,7 +194,6 @@ func (h *Handler) handleList(w http.ResponseWriter, r *http.Request) {
 	respond(w, out, http.StatusOK)
 }
 
-// fill loads the metadata and dates a later step needs, each at most once per item.
 func (h *Handler) fill(it *listItem, repoType string, meta, tip, created bool) {
 	if meta && !it.hasMeta {
 		it.meta, it.hasMeta = readMeta(it.repo, it.rev, repoType), true
@@ -208,7 +204,7 @@ func (h *Handler) fill(it *listItem, repoType string, meta, tip, created bool) {
 	}
 }
 
-// sortItems orders by key (dates; likes, downloads and trendingScore are all zero here), descending unless asc, ties by id.
+// likes, downloads and trendingScore are all zero here, so those keys only sort by id.
 func sortItems(items []*listItem, key string, asc bool) {
 	slices.SortStableFunc(items, func(a, b *listItem) int {
 		var c int
@@ -228,7 +224,6 @@ func sortItems(items []*listItem, key string, asc bool) {
 	})
 }
 
-// matchesAll reports whether every filter tag is present.
 func matchesAll(tags, filters []string) bool {
 	for _, f := range filters {
 		if !slices.Contains(tags, f) {
@@ -238,7 +233,6 @@ func matchesAll(tags, filters []string) bool {
 	return true
 }
 
-// listItem is one enumerated repository with everything a projection may pick from.
 type listItem struct {
 	ref                         repoRef
 	repo                        *repository.Repository
@@ -248,7 +242,6 @@ type listItem struct {
 	hasMeta, hasTip, hasCreated bool
 }
 
-// project emits id, trendingScore and the requested fields this hub can fill; absent values are omitted, requested zero values stay.
 func (it *listItem) project(fields map[string]bool) map[string]any {
 	out := map[string]any{"id": it.ref.id, "trendingScore": 0}
 	set := func(name string, v any) {

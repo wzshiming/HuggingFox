@@ -16,10 +16,9 @@ type handler struct {
 	fs fs.FS
 }
 
-// hubRoutePattern is the hub/SPA boundary shared with proxy-routes.ts and deploy/nginx.conf.template (kept identical by tests).
+// Hub/SPA boundary; tests keep it identical to proxy-routes.ts and deploy/nginx.conf.template.
 const hubRoutePattern = `^(?:/api(?:[/?]|$)|/(?:(?:datasets|spaces)/)?[^/?]+(?:/[^/?]+)?/resolve/|/(?:(?:datasets|spaces)/)?[^/?]+(?:/[^/?]+)?\.git(?:[/?]|$)|/(?:(?:datasets|spaces)/)?[^/?]+(?:/[^/?]+)?/(?:info/(?:refs|lfs)|git-upload-pack|git-receive-pack)(?:[/?]|$)|/(?:objects|v1|v2|shards|reconstructions|xet-bridge|internal)(?:[/?]|$)|/avatars/[^/?]+\.svg(?:\?|$))`
 
-// Handler serves fsys (the SvelteKit output) with SPA fallback to index.html; hub-owned paths never receive HTML.
 func Handler(fsys fs.FS) http.Handler {
 	return &handler{fs: fsys}
 }
@@ -30,7 +29,7 @@ func isAPI(p string) bool {
 	return p == "/api" || strings.HasPrefix(p, "/api/")
 }
 
-// reserved paths belong to the asset bundle or the hub protocols, so a miss is a real 404 rather than the SPA shell.
+// A miss under the asset bundle or a hub route is a real 404, never the SPA shell.
 func reserved(p string) bool {
 	return p == "/_app" || strings.HasPrefix(p, "/_app/") || hubRoute.MatchString(p)
 }
@@ -60,7 +59,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.serveIndex(w, r)
 }
 
-// serveFile reports false when name is not a regular file in the bundle.
 func (h *handler) serveFile(w http.ResponseWriter, r *http.Request, name string) bool {
 	f, err := h.fs.Open(name)
 	if err != nil {
@@ -101,7 +99,7 @@ func (h *handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	serveContent(w, r, "index.html", f, info)
 }
 
-// serveContent avoids http.ServeFileFS, whose index.html and trailing-slash redirects would loop the SPA shell.
+// Not http.ServeFileFS: its index.html and trailing-slash redirects would loop the SPA shell.
 func serveContent(w http.ResponseWriter, r *http.Request, name string, f fs.File, info fs.FileInfo) {
 	rs, ok := f.(io.ReadSeeker)
 	if !ok {

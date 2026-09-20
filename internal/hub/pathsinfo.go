@@ -48,7 +48,7 @@ type pathInfo struct {
 	LastCommit *lastCommitInfo      `json:"lastCommit,omitempty"`
 }
 
-// parsePathsInfo accepts the JSON body the web client sends and the form body huggingface_hub sends; paths come back cleaned and deduplicated.
+// The web client posts JSON; huggingface_hub posts a form body.
 func parsePathsInfo(r *http.Request) (pathsInfoRequest, error) {
 	r.Body = http.MaxBytesReader(nil, r.Body, maxPathsInfoBody)
 	var req pathsInfoRequest
@@ -65,7 +65,7 @@ func parsePathsInfo(r *http.Request) (pathsInfoRequest, error) {
 		if err := dec.Decode(&req); err != nil {
 			return req, fmt.Errorf("invalid request body: %v", err)
 		}
-		// Reading on to EOF rejects trailing data and lets the size limit trip on bodies whose first value ends early.
+		// Reading to EOF rejects trailing data and lets MaxBytesReader trip on oversized bodies.
 		if _, err := dec.Token(); !errors.Is(err, io.EOF) {
 			if err == nil {
 				err = errors.New("trailing data after the JSON value")
@@ -90,7 +90,6 @@ func parsePathsInfo(r *http.Request) (pathsInfoRequest, error) {
 	return req, nil
 }
 
-// cleanRepoPath normalizes a path inside the repository, "" being the root; false when it is absolute or escapes the root.
 func cleanRepoPath(p string) (string, bool) {
 	clean := path.Clean(p)
 	if clean == "." {
@@ -107,7 +106,7 @@ func parentDir(p string) string {
 	return ""
 }
 
-// handlePathsInfo serves POST /api/{type}/{ns}/{repo}/paths-info/{rev}: each parent directory is listed once and the requested entries are picked from it; missing paths are omitted.
+// Each parent directory is listed once; paths that do not exist are omitted, not errors.
 func (h *Handler) handlePathsInfo(w http.ResponseWriter, r *http.Request) {
 	t, err := target(r)
 	if err != nil {
@@ -164,7 +163,7 @@ func (h *Handler) handlePathsInfo(w http.ResponseWriter, r *http.Request) {
 	respond(w, out, http.StatusOK)
 }
 
-// treeAt lists dir at hash, descending from the root so a component that is missing or a file yields no entries while any listing error is a storage failure.
+// Descends from the root so a missing or file component yields no entries rather than an error.
 func treeAt(repo *repository.Repository, hash, dir string, listed map[string][]*repository.TreeEntry) ([]*repository.TreeEntry, error) {
 	if entries, ok := listed[dir]; ok {
 		return entries, nil
@@ -187,7 +186,6 @@ func treeAt(repo *repository.Repository, hash, dir string, listed map[string][]*
 	return entries, nil
 }
 
-// describe renders one tree entry; directories carry their tree hash and no size, files their blob or LFS size.
 func describe(ctx context.Context, repo *repository.Repository, hash string, e *repository.TreeEntry, expand bool) (pathInfo, error) {
 	info := pathInfo{Type: e.Type(), OID: e.Hash().String(), Path: e.Path()}
 	last := e.LastCommit()
@@ -213,7 +211,7 @@ func describe(ctx context.Context, repo *repository.Repository, hash string, e *
 	return info, nil
 }
 
-// directoryLastCommit walks the history from hash for the first commit whose diff against its first parent touches a file under dir; hfd's per-entry history only matches files.
+// hfd's per-entry LastCommit only matches files, so directories walk the history themselves.
 func directoryLastCommit(ctx context.Context, repo *repository.Repository, hash, dir string) (*repository.Commit, error) {
 	all, err := repo.Commits(hash, nil)
 	if err != nil {

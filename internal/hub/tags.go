@@ -13,7 +13,7 @@ import (
 	"github.com/matrixhub-ai/hfd/pkg/repository"
 )
 
-// tagCategories lists the keys of the Hub's tags-by-type response per repository type; every key is always present.
+// Keys of the Hub's tags-by-type response; every key is emitted even when empty.
 var tagCategories = map[string][]string{
 	"models":   {"region", "library", "other", "license", "language", "deploy", "dataset", "bucket", "pipeline_tag"},
 	"datasets": {"library", "license", "language", "other", "task_ids", "task_categories", "size_categories", "format", "modality", "benchmark"},
@@ -21,7 +21,6 @@ var tagCategories = map[string][]string{
 
 type taskInfo struct{ label, subType string }
 
-// pipelineTaxonomy is the Hub task taxonomy shared by model pipeline tags and dataset task categories.
 var pipelineTaxonomy = map[string]taskInfo{
 	"text-classification":            {"Text Classification", "nlp"},
 	"token-classification":           {"Token Classification", "nlp"},
@@ -81,7 +80,6 @@ var pipelineTaxonomy = map[string]taskInfo{
 	"graph-ml":                       {"Graph Machine Learning", "other"},
 }
 
-// libraryLabels maps the Hub's model library tags to their display labels.
 var libraryLabels = map[string]string{
 	"pytorch": "PyTorch", "tf": "TensorFlow", "jax": "JAX", "safetensors": "Safetensors",
 	"transformers": "Transformers", "peft": "PEFT", "gguf": "GGUF", "tensorboard": "TensorBoard",
@@ -99,7 +97,6 @@ var libraryLabels = map[string]string{
 	"unity-sentis": "unity-sentis", "dduf": "DDUF", "univa": "univa",
 }
 
-// tagFacet is one entry of a tags-by-type category.
 type tagFacet struct {
 	ID        string `json:"id"`
 	Label     string `json:"label"`
@@ -108,7 +105,6 @@ type tagFacet struct {
 	Clickable bool   `json:"clickable,omitempty"`
 }
 
-// handleTagsByType serves GET /api/{models|datasets}-tags-by-type from the facets of the local repositories.
 func (h *Handler) handleTagsByType(w http.ResponseWriter, r *http.Request) {
 	repoType := mux.Vars(r)["repoType"]
 	if !h.allow(w, r, permission.OperationListRepos, repoType, permission.Context{}) {
@@ -150,7 +146,6 @@ func (h *Handler) handleTagsByType(w http.ResponseWriter, r *http.Request) {
 	respond(w, out, http.StatusOK)
 }
 
-// facetsOf classifies one repository's tags: models keep language, pipeline, library and deploy ids bare, datasets carry the field prefix; prefixed tags outside the type's categories are not facets.
 func facetsOf(repoType string, m repoMeta) []tagFacet {
 	var out []tagFacet
 	for _, tag := range m.tags {

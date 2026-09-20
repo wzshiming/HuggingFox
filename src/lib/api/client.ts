@@ -249,25 +249,7 @@ export function createClient({
 			);
 		},
 
-		async compare(
-			type: RepoType,
-			id: string,
-			base: string,
-			head: string,
-			{ raw }: { raw?: boolean } = {},
-			options: RequestOptions = {}
-		): Promise<string> {
-			const path = `${repoApiPath(type, id)}/compare/${encodeRev(base)}..${encodeRev(head)}`;
-			const res = await request(
-				path + query({ raw: raw ? 1 : undefined }),
-				options,
-				'text/plain, application/json'
-			);
-			const text = await res.text();
-			return res.headers.get('content-type')?.includes('json') ? JSON.parse(text) : text;
-		},
-
-		// Same compare endpoint, read with the text-file byte limit so a huge patch never lands in memory.
+		// Bound patch reads so a large diff cannot exhaust browser memory.
 		async patch(
 			type: RepoType,
 			id: string,

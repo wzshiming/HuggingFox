@@ -24,7 +24,7 @@ type commitInfo struct {
 	Date    string         `json:"date"`
 }
 
-// handleCommits serves GET /api/{type}/{ns}/{repo}/commits/{rev}: one history walk yields X-Total-Count and the page p (limit 50).
+// One history walk yields both X-Total-Count and page p.
 func (h *Handler) handleCommits(w http.ResponseWriter, r *http.Request) {
 	t, err := target(r)
 	if err != nil {
