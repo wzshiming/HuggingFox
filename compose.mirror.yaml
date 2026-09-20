@@ -1,0 +1,6 @@
+services:
+  huggingfox:
+    command:
+      - --data=/data
+      - --host-url=${HUB_PUBLIC_URL:-http://localhost:${WEB_PORT:-8080}}
+      - --pull-mirror=${HUB_MIRROR_UPSTREAM:-https://huggingface.co}

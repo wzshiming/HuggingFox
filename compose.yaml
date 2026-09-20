@@ -1,0 +1,14 @@
+services:
+  huggingfox:
+    build: .
+    command:
+      - --data=/data
+      - --host-url=${HUB_PUBLIC_URL:-http://localhost:${WEB_PORT:-8080}}
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+      - '${HFD_SSH_PORT:-2222}:2222'
+    volumes:
+      - hfd-data:/data
+
+volumes:
+  hfd-data:

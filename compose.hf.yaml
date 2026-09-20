@@ -1,0 +1,9 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    environment:
+      HUB_UPSTREAM: https://huggingface.co
+    ports:
+      - '${WEB_PORT:-3000}:80'

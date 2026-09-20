@@ -141,3 +141,16 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# HuggingFox
+/build/*
+!/build/.gitkeep
+/bin/
+/data/
+test-results/
+playwright-report/
+/reference/
+src/lib/paraglide/
+project.inlang/*
+!project.inlang/settings.json
+.DS_Store
